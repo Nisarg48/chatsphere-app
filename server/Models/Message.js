@@ -17,12 +17,21 @@ const messageSchema = new mongoose.Schema({
         trim: true,
     },
     sent_at: {
-        type: Date,
-        default: Date.now,
+        type: String,
+        default: () => formatDate(Date.now),
     },
 });
 
-messageSchema.index({ room_id: 1, sent_at: 1 });
+function formatDate(date) {
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+
+    return `${day}/${month}/${year} - ${hours}:${minutes}`;
+}
 
 const Message = mongoose.model("Message", messageSchema);
 module.exports = Message;

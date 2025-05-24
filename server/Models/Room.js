@@ -7,18 +7,21 @@ const roomSchema = new mongoose.Schema({
     },
     description: {
         type: String,
+        default: null,
         required: true
     },
     password: {
         type: String,
-        required: false
+        default: null,
+        required: false,
     },
     is_password_protected: {
         type: Boolean,
-        required: true
+        default: false,
+        required: true,
     },
     users: {
-        type: Array,
+        type: ["String"],
         required: false
     },
     created_on: {

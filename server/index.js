@@ -1,16 +1,23 @@
 require('dotenv').config();
 const express = require('express');
-const ConnectDB = ('./DBConnection/connect');
+const connectDB = require('./DBConnection/connect');
 const app = express();
+const routes = require('./Routes/routes');
+const cors = require('cors');
 
 const port = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use('/chat-sphere', routes);
 
 async function startServer() 
 {
     try 
     {
         // Connect to the database
-        await ConnectDB(process.env.CONNECTION_STRING);
+        await connectDB(process.env.CONNECTION_STRING);
         console.log('Connected to MongoDB');
 
         // Middleware
