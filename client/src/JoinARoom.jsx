@@ -1,15 +1,51 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { customAlphabet } from 'nanoid';
 
 function JoinARoom() {
     const [isPasswordProtected, setIsPasswordProtected] = useState(false);
     const [roomName, setRoomName] = useState('');
     const [isRoomListOpen, setIsRoomListOpen] = useState(false);
+    const [userName, setUserName] = useState('');
+    const navigate = useNavigate();
 
-    const handleRoomSelect = (room) => {
-        setRoomName(room.name);
-        setIsPasswordProtected(room.protected);
+    const handleRoomSelect = (roomData) => {
+        setRoomName(roomData.name);
+        setIsPasswordProtected(roomData.is_password_protected);
         setIsRoomListOpen(false);
     };
+
+    const joinRoom = async (e) => {
+        try {
+            e.preventDefault();
+
+            const generateID = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 6);
+            const userId = generateID();
+            const UserName = `${userName}_( ${userId} )`;
+            console.log('Generated username:', UserName);
+
+
+            const response = await axios.put(`http://localhost:5000/chat-sphere/joinRoom/${roomName}`, 
+                {
+                    user: UserName,
+                }
+            );
+
+            if (response.status === 200) {
+                console.log('Joined roomData successfully:', response.data);
+
+                // Redirect to the chat roomData with roomData details
+                navigate(`/chat/${response.data._id}`, { state: { user: UserName } });
+
+            } else {
+                console.error('Failed to join roomData:', response.data);
+            }
+        }
+        catch (error) {
+            console.error('Error joining roomData:', error);
+        }
+    }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4 py-10">
@@ -25,6 +61,7 @@ function JoinARoom() {
                                 type="text"
                                 placeholder="Enter Your Name"
                                 className="w-full mt-1 border border-gray-400 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                onChange={(e) => setUserName(e.target.value)}
                             />
                         </fieldset>
 
@@ -35,7 +72,9 @@ function JoinARoom() {
                                 <button
                                     type="button"
                                     className="w-1/2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded border border-gray-400"
-                                    onClick={() => setIsRoomListOpen(!isRoomListOpen)}
+                                    onClick={() => {
+                                        setIsRoomListOpen(!isRoomListOpen)
+                                    }}
                                 >
                                     {isRoomListOpen ? 'Hide Rooms' : 'Show Rooms'}
                                 </button>
@@ -63,6 +102,7 @@ function JoinARoom() {
                         <button
                             type="submit"
                             className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition duration-200"
+                            onClick={(e) => { joinRoom(e) }}
                         >
                             Join Room
                         </button>
@@ -79,30 +119,30 @@ function JoinARoom() {
 // Room List Component
 function RoomList({ onSelect }) {
     const [searchTerm, setSearchTerm] = useState('');
+    const [rooms, setRooms] = useState([]);
 
-    const rooms = [
-        { name: 'General', protected: false },
-        { name: 'Project-X', protected: true },
-        { name: 'OpenRoom', protected: false },
-        { name: 'PrivateTeam', protected: true },
-        { name: 'SecretRoom', protected: true },
-        { name: 'MeetingRoom', protected: false },
-        { name: 'Discussion', protected: false },
-        { name: 'Feedback', protected: false },
-        { name: 'Support', protected: false },
-        { name: 'Development', protected: true },
-        { name: 'Design', protected: true },
-        { name: 'Marketing', protected: false },
-        { name: 'Sales', protected: false },
-        { name: 'HR', protected: true },
-        { name: 'Finance', protected: true },
-        { name: 'Legal', protected: false },
-        { name: 'Admin', protected: false },
-        { name: 'Operations', protected: true },
-    ];
+    // API call to get all rooms list
+    const getAllRooms = async () => {
+        try {
+            const response = await axios.get('http://localhost:5000/chat-sphere/getAllRooms');
+            if (response.data) {
+                console.log('Rooms fetched successfully:', response.data);
+                setRooms(response.data);
+            } else {
+                console.error('No rooms found.');
+            }
+        } 
+        catch (error) {
+            console.error('Error fetching rooms:', error);
+        }
+    }
 
-    const filteredRooms = rooms.filter((room) =>
-        room.name.toLowerCase().includes(searchTerm.toLowerCase())
+    useEffect(() => {
+        getAllRooms();
+    }, []);
+
+    const filteredRooms = rooms.filter((roomData) =>
+        roomData.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -119,14 +159,14 @@ function RoomList({ onSelect }) {
                 <p className="text-sm text-gray-500 text-center">No rooms found.</p>
             ) : (
                 <ul className="space-y-2">
-                    {filteredRooms.map((room, index) => (
+                    {filteredRooms.map((roomData, index) => (
                         <li
                             key={index}
-                            onClick={() => onSelect(room)}
+                            onClick={() => onSelect(roomData)}
                             className="cursor-pointer border border-gray-300 hover:bg-gray-100 rounded px-4 py-2 text-left transition"
                         >
-                            {room.name}{' '}
-                            {room.protected && (
+                            {roomData.name}{' '}
+                            {roomData.is_password_protected && (
                                 <span className="text-xs text-red-500">(Protected)</span>
                             )}
                         </li>

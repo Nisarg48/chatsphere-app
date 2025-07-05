@@ -11,7 +11,7 @@ function AppRoute() {
                 <Route path="/" element={<Home />} />
                 <Route path="/join" element={<JoinARoom />} />
                 <Route path="/create" element={<CreateARoom />} />
-                <Route path="/chat" element={<ChatRoom />} />
+                <Route path="/chat/:id" element={<ChatRoom />} />
             </Routes>
         </>
     )

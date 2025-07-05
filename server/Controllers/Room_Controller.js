@@ -4,7 +4,7 @@ function generateNumericSuffix() {
     return Date.now().toString().slice(-6);
 }
 
-// Function to create a new room
+// Function to create a new roomData
 exports.createRoom = async (req, res) => {
     const { name, description, password, is_password_protected, expired_on } = req.body;
 
@@ -25,7 +25,7 @@ exports.createRoom = async (req, res) => {
         const suffix = generateNumericSuffix();
         const uniqueRoomName = `${name}_${suffix}`;
 
-        const room = new Room({
+        const roomData = new Room({
             name: uniqueRoomName,
             description,
             password: is_password_protected ? password : null,
@@ -33,21 +33,34 @@ exports.createRoom = async (req, res) => {
             expired_on,
         });
 
-        await room.save();
-        return res.status(201).json(room);
+        await roomData.save();
+        return res.status(201).json(roomData);
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
 };
 
-// Function to get room by Name
-exports.getRoomByName = async (req, res) => {
+// Function to get roomData by Id
+exports.getRoomById = async (req, res) => {
     try {
-        const room = await Room.findOne({ name: req.params.name });
-        if (!room) {
+        const roomData = await Room.findById(req.params.id);
+        if (!roomData) {
             return res.status(404).json({ message: "Room not found." });
         }
-        return res.status(200).json(room);
+        return res.status(200).json(roomData);
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+// Function to get roomData by Name
+exports.getRoomByName = async (req, res) => {
+    try {
+        const roomData = await Room.findOne({ name: req.params.name });
+        if (!roomData) {
+            return res.status(404).json({ message: "Room not found." });
+        }
+        return res.status(200).json(roomData);
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
@@ -63,28 +76,32 @@ exports.getAllRooms = async (req, res) => {
     }
 };
 
-// Function to update room details -> When User joins the room then add it's name in users array
+// Function to update roomData details -> When User joins the roomData then add it's name in users array
 exports.joinRoom = async (req, res) => {
     try {
-        const room = await Room.findOneAndUpdate({ name: req.params.name }, { $push: { users: req.body.user } }, { new: true });
-        if (!room) {
+        const roomData = await Room.findOneAndUpdate({ name: req.params.name }, { $push: { users: req.body.user } }, { new: true });
+        if (!roomData) {
             return res.status(404).json({ message: "Room not found." });
         }
-        return res.status(200).json(room);
+        return res.status(200).json(roomData);
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
 };
 
-// Function to update room details -> When User leaves the room then remove it's name from users array
 exports.leaveRoom = async (req, res) => {
     try {
-        const room = await Room.findOneAndUpdate({ name: req.params.name }, { $pull: { users: req.body.user } }, { new: true });
-        if (!room) {
-            return res.status(404).json({ message: "Room not found." });
+        const roomData = await Room.findOneAndUpdate(
+            { _id: req.params.id },
+            { $pull: { users: req.body.user } },
+            { new: true }
+        );
+        if (!roomData) {
+            return res.status(404).json({ message: 'Room not found.' });
         }
-        return res.status(200).json(room);
+        return res.status(200).json(roomData);
     } catch (error) {
-        return res.status(500).json({ message: error.message });
+        console.error('Error leaving room:', error);
+        return res.status(500).json({ message: 'Server error.' });
     }
 };
