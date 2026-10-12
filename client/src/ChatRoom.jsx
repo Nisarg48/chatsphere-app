@@ -3,7 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import { toast, ToastContainer } from 'react-toastify';
-import { FaSignOutAlt, FaUser, FaPaperPlane, FaLock, FaBars, FaTimes } from 'react-icons/fa';
+import { FaSignOutAlt, FaUser, FaPaperPlane, FaLock, FaBars, FaTimes, FaKeyboard } from 'react-icons/fa';
 import 'react-toastify/dist/ReactToastify.css';
 
 const socket = io('http://localhost:5000', { autoConnect: false });
@@ -75,8 +75,10 @@ function ChatRoom() {
     const [isLeaving, setIsLeaving] = useState(false);
     const [error, setError] = useState(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [typingUsers, setTypingUsers] = useState([]);
     const messagesEndRef = useRef(null);
     const isLeavingRef = useRef(false);
+    const typingTimeoutRef = useRef(null);
 
     useEffect(() => {
         if (!currentUser) {
@@ -113,6 +115,10 @@ function ChatRoom() {
             setIsLeaving(false);
         });
 
+        socket.on('typing-status', (users) => {
+            setTypingUsers(users.filter(user => user !== currentUser));
+        });
+
         const handleNavigation = () => {
             if (!isLeavingRef.current && window.confirm('Are you sure you want to leave the room?')) {
                 isLeavingRef.current = true;
@@ -144,6 +150,7 @@ function ChatRoom() {
                 socket.off('update-user-list');
                 socket.off('error');
                 socket.off('connect_error');
+                socket.off('typing-status');
                 socket.disconnect();
             }
         };
@@ -214,6 +221,26 @@ function ChatRoom() {
         };
         socket.emit('send-message', messageData);
         setNewMessage('');
+        
+        // Clear typing status
+        socket.emit('typing-stop', { id, user: currentUser });
+    };
+
+    const handleTyping = (e) => {
+        setNewMessage(e.target.value);
+        
+        // Emit typing start
+        socket.emit('typing-start', { id, user: currentUser });
+        
+        // Clear previous timeout
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+        
+        // Set new timeout to stop typing after 3 seconds
+        typingTimeoutRef.current = setTimeout(() => {
+            socket.emit('typing-stop', { id, user: currentUser });
+        }, 3000);
     };
 
     const handleKeyDown = (e) => {
@@ -380,6 +407,22 @@ function ChatRoom() {
                             </span>
                         </div>
                     ))}
+                    
+                    {/* Typing Indicator */}
+                    {typingUsers.length > 0 && (
+                        <div className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 animate-pulse">
+                            <FaKeyboard />
+                            <span>
+                                {typingUsers.length === 1
+                                    ? `${typingUsers[0]} is typing...`
+                                    : typingUsers.length === 2
+                                    ? `${typingUsers[0]} and ${typingUsers[1]} are typing...`
+                                    : `${typingUsers.length} people are typing...`
+                                }
+                            </span>
+                        </div>
+                    )}
+                    
                     <div ref={messagesEndRef} />
                 </div>
                 <div className="border-t border-indigo-200 dark:border-gray-700 p-3 sm:p-4 bg-white dark:bg-gray-800 flex items-center gap-2 sm:gap-4">
@@ -388,7 +431,7 @@ function ChatRoom() {
                         placeholder="Type your message..."
                         className="flex-grow resize-none border border-indigo-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 bg-white dark:bg-gray-700 text-indigo-900 dark:text-gray-100"
                         value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
+                        onChange={handleTyping}
                         onKeyDown={handleKeyDown}
                     />
                     <button

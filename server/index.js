@@ -28,6 +28,7 @@ app.use(express.json());
 app.use('/chat-sphere', routes);
 
 const roomUsers = {};
+const typingUsers = {};
 
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
@@ -67,9 +68,30 @@ io.on('connection', (socket) => {
         try {
             const saved = await Message.create(messageData);
             io.to(messageData.room_id).emit('receive-message', saved);
+            
+            // Clear typing status for the sender
+            if (typingUsers[messageData.room_id]) {
+                typingUsers[messageData.room_id].delete(messageData.sender);
+                io.to(messageData.room_id).emit('typing-status', Array.from(typingUsers[messageData.room_id] || []));
+            }
         } catch (err) {
             console.error('Error saving message:', err);
             socket.emit('error', { message: 'Failed to send message.' });
+        }
+    });
+
+    socket.on('typing-start', ({ id, user }) => {
+        if (!typingUsers[id]) {
+            typingUsers[id] = new Set();
+        }
+        typingUsers[id].add(user);
+        io.to(id).emit('typing-status', Array.from(typingUsers[id]));
+    });
+
+    socket.on('typing-stop', ({ id, user }) => {
+        if (typingUsers[id]) {
+            typingUsers[id].delete(user);
+            io.to(id).emit('typing-status', Array.from(typingUsers[id]));
         }
     });
 
