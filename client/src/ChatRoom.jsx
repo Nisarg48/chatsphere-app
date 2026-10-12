@@ -1,12 +1,66 @@
-/* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import { toast, ToastContainer } from 'react-toastify';
+import { FaSignOutAlt, FaUser, FaPaperPlane, FaLock, FaBars, FaTimes } from 'react-icons/fa';
 import 'react-toastify/dist/ReactToastify.css';
 
 const socket = io('http://localhost:5000', { autoConnect: false });
+
+// Avatar color palette
+const avatarColors = [
+    'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500',
+    'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500',
+    'bg-orange-500', 'bg-cyan-500'
+];
+
+// Get consistent color for a user
+function getAvatarColor(username) {
+    let hash = 0;
+    for (let i = 0; i < username.length; i++) {
+        hash = username.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return avatarColors[Math.abs(hash) % avatarColors.length];
+}
+
+// Get initials from username
+function getInitials(username) {
+    const parts = username.split(' ');
+    if (parts.length === 1) {
+        return parts[0].charAt(0).toUpperCase();
+    }
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
+// Group consecutive messages from same sender
+function groupMessages(messages, currentUser) {
+    if (!messages || messages.length === 0) return [];
+    
+    const grouped = [];
+    let currentGroup = null;
+    
+    messages.forEach((msg, index) => {
+        if (!currentGroup || currentGroup.sender !== msg.sender) {
+            if (currentGroup) {
+                grouped.push(currentGroup);
+            }
+            currentGroup = {
+                sender: msg.sender,
+                messages: [msg],
+                isCurrentUser: msg.sender === currentUser
+            };
+        } else {
+            currentGroup.messages.push(msg);
+        }
+    });
+    
+    if (currentGroup) {
+        grouped.push(currentGroup);
+    }
+    
+    return grouped;
+}
 
 function ChatRoom() {
     const { id } = useParams();
@@ -20,6 +74,7 @@ function ChatRoom() {
     const [isLoading, setIsLoading] = useState(true);
     const [isLeaving, setIsLeaving] = useState(false);
     const [error, setError] = useState(null);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const messagesEndRef = useRef(null);
     const isLeavingRef = useRef(false);
 
@@ -210,28 +265,49 @@ function ChatRoom() {
     }
 
     return (
-        <div className="flex flex-col md:flex-row h-screen bg-indigo-50">
-            <div className="w-full md:w-80 bg-white border-b md:border-b-0 md:border-r border-indigo-200 flex-shrink-0 flex flex-col transition-all duration-300">
+        <div className="flex flex-col md:flex-row h-screen bg-indigo-50 relative">
+            {/* Mobile Sidebar Toggle */}
+            <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="md:hidden absolute top-4 left-4 z-50 bg-indigo-600 text-white p-2 rounded-lg shadow-lg"
+            >
+                {isSidebarOpen ? <FaTimes /> : <FaBars />}
+            </button>
+
+            {/* Sidebar */}
+            <div className={`fixed md:relative inset-y-0 left-0 z-40 w-80 bg-white border-r border-indigo-200 flex-shrink-0 flex flex-col transition-all duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
                 <div className="p-4 md:p-6 border-b border-indigo-200">
                     <h2 className="text-xl md:text-2xl font-semibold text-indigo-800">{roomData.name}</h2>
                     <p className="text-sm text-indigo-600 mt-1">{roomData.description}</p>
                     {roomData.is_password_protected && (
-                        <p className="mt-2 text-sm text-red-600 font-mono">
+                        <p className="mt-2 text-sm text-red-600 font-mono flex items-center gap-2">
+                            <FaLock />
                             Password: <span className="font-semibold">{roomData.password}</span>
                         </p>
                     )}
                 </div>
                 <div className="flex-grow overflow-y-auto">
-                    <h3 className="px-4 py-2 border-b border-indigo-200 text-indigo-700 font-semibold text-sm">
+                    <h3 className="px-4 py-2 border-b border-indigo-200 text-indigo-700 font-semibold text-sm flex items-center gap-2">
+                        <FaUser />
                         Users in this room ({userList.length})
                     </h3>
                     <ul className="px-4 py-3 space-y-2">
                         {userList.map((user) => (
                             <li
                                 key={user}
-                                className={`text-indigo-800 transition-opacity duration-200 ${user === currentUser ? 'font-semibold text-indigo-900' : ''}`}
+                                className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 ${user === currentUser ? 'bg-indigo-100' : 'hover:bg-gray-50'}`}
                             >
-                                {user} {user === currentUser && '(You)'}
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 ${getAvatarColor(user)}`}>
+                                    {getInitials(user)}
+                                </div>
+                                <div className="flex-grow min-w-0">
+                                    <p className={`text-sm truncate ${user === currentUser ? 'font-semibold text-indigo-900' : 'text-indigo-800'}`}>
+                                        {user}
+                                    </p>
+                                    {user === currentUser && (
+                                        <p className="text-xs text-indigo-500">You</p>
+                                    )}
+                                </div>
                             </li>
                         ))}
                     </ul>
@@ -243,35 +319,67 @@ function ChatRoom() {
                             handleLeaveRoom();
                         }}
                         disabled={isLeaving}
-                        className={`w-full bg-red-500 hover:bg-red-600 text-white rounded-md px-4 py-2 text-sm font-semibold transition ${isLeaving ? 'opacity-50 cursor-not-allowed' : ''
+                        className={`w-full bg-red-500 hover:bg-red-600 text-white rounded-md px-4 py-2 text-sm font-semibold transition flex items-center justify-center gap-2 ${isLeaving ? 'opacity-50 cursor-not-allowed' : ''
                             }`}
                     >
+                        <FaSignOutAlt />
                         {isLeaving ? 'Leaving...' : 'Leave Room'}
                     </button>
                 </div>
             </div>
-            <div className="flex flex-col flex-grow">
+
+            {/* Overlay for mobile */}
+            {isSidebarOpen && (
+                <div
+                    className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
+            {/* Chat Area */}
+            <div className="flex flex-col flex-grow md:ml-0">
                 <div className="flex-grow overflow-y-auto p-4 md:p-6 space-y-4 bg-indigo-100">
-                    {messages.map(({ _id, sender, message, sent_at }) => {
-                        const isCurrentUser = sender === currentUser;
-                        return (
-                            <div
-                                key={_id}
-                                className={`flex flex-col max-w-[85%] sm:max-w-[70%] ${isCurrentUser ? 'items-end ml-auto' : 'items-start mr-auto'}`}
-                            >
-                                <div
-                                    className={`px-4 py-2 rounded-lg shadow-sm whitespace-pre-wrap transition-all duration-200 ${isCurrentUser
-                                            ? 'bg-indigo-600 text-white rounded-br-none'
-                                            : 'bg-white text-indigo-900 rounded-bl-none border border-indigo-300'
-                                        }`}
-                                >
-                                    <p className="font-semibold text-sm">{sender}</p>
-                                    <p className="mt-1 text-sm">{message}</p>
+                    {groupMessages(messages, currentUser).map((group, groupIndex) => (
+                        <div
+                            key={groupIndex}
+                            className={`flex flex-col max-w-[85%] sm:max-w-[70%] ${group.isCurrentUser ? 'items-end ml-auto' : 'items-start mr-auto'}`}
+                        >
+                            {/* Avatar and sender name */}
+                            <div className={`flex items-center gap-2 mb-1 ${group.isCurrentUser ? 'flex-row-reverse' : ''}`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 ${getAvatarColor(group.sender)}`}>
+                                    {getInitials(group.sender)}
                                 </div>
-                                <span className="text-xs text-indigo-500 mt-1">{sent_at}</span>
+                                <p className={`text-sm font-semibold ${group.isCurrentUser ? 'text-indigo-700' : 'text-indigo-900'}`}>
+                                    {group.sender}
+                                </p>
                             </div>
-                        );
-                    })}
+                            
+                            {/* Message bubbles */}
+                            <div className={`flex flex-col gap-1 ${group.isCurrentUser ? 'items-end' : 'items-start'}`}>
+                                {group.messages.map((msg, msgIndex) => (
+                                    <div
+                                        key={msg._id}
+                                        className={`px-4 py-2 rounded-lg shadow-sm whitespace-pre-wrap transition-all duration-200 ${
+                                            group.isCurrentUser
+                                                ? msgIndex === group.messages.length - 1
+                                                    ? 'bg-indigo-600 text-white rounded-br-none'
+                                                    : 'bg-indigo-500 text-white rounded-lg'
+                                                : msgIndex === group.messages.length - 1
+                                                    ? 'bg-white text-indigo-900 rounded-bl-none border border-indigo-300'
+                                                    : 'bg-white text-indigo-900 rounded-lg border border-indigo-200'
+                                        }`}
+                                    >
+                                        <p className="text-sm">{msg.message}</p>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            {/* Timestamp for last message in group */}
+                            <span className="text-xs text-indigo-500 mt-1">
+                                {group.messages[group.messages.length - 1].sent_at}
+                            </span>
+                        </div>
+                    ))}
                     <div ref={messagesEndRef} />
                 </div>
                 <div className="border-t border-indigo-200 p-3 sm:p-4 bg-white flex items-center gap-2 sm:gap-4">
@@ -285,8 +393,9 @@ function ChatRoom() {
                     />
                     <button
                         onClick={sendMessage}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-md px-4 sm:px-5 py-2 text-sm font-semibold transition"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-md px-4 sm:px-5 py-2 text-sm font-semibold transition flex items-center gap-2"
                     >
+                        <FaPaperPlane />
                         Send
                     </button>
                 </div>
