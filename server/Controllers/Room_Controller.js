@@ -70,7 +70,12 @@ exports.getRoomByName = async (req, res) => {
 exports.getAllRooms = async (req, res) => {
     try {
         const rooms = await Room.find();
-        return res.status(200).json(rooms);
+        // Add user count to each room
+        const roomsWithCount = rooms.map(room => ({
+            ...room.toObject(),
+            userCount: room.users ? room.users.length : 0
+        }));
+        return res.status(200).json(roomsWithCount);
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
