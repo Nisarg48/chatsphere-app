@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaSignInAlt, FaPlusCircle } from 'react-icons/fa';
 
 function Home() {
     const navigate = useNavigate();
@@ -21,16 +22,18 @@ function Home() {
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
                     <button 
-                        className="w-full sm:w-64 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 border-2 border-transparent"
+                        className="w-full sm:w-64 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 border-2 border-transparent flex items-center justify-center gap-2"
                         onClick={() => navigate('/join')}
                     >
+                        <FaSignInAlt className="text-xl" />
                         Join A Room
                     </button>
 
                     <button
-                        className="w-full sm:w-64 bg-white hover:bg-gray-50 text-indigo-600 font-semibold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 border-2 border-indigo-600"
+                        className="w-full sm:w-64 bg-white hover:bg-gray-50 text-indigo-600 font-semibold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 border-2 border-indigo-600 flex items-center justify-center gap-2"
                         onClick={() => navigate('/create')}
                     >
+                        <FaPlusCircle className="text-xl" />
                         Create A Room
                     </button>
                 </div>

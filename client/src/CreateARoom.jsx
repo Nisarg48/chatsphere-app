@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { FaLock, FaUnlock, FaUser, FaComment, FaClock, FaPlus } from 'react-icons/fa';
 
 function CreateARoom() {
     const [roomName, setRoomName] = useState('');
@@ -85,7 +86,10 @@ function CreateARoom() {
 
                 <form onSubmit={handleSubmit} className="space-y-6 text-sm">
                     <div>
-                        <label className="block mb-1 text-gray-700 font-medium">Room Name</label>
+                        <label className="block mb-1 text-gray-700 font-medium flex items-center gap-2">
+                            <FaComment className="text-indigo-500" />
+                            Room Name
+                        </label>
                         <input
                             type="text"
                             value={roomName}
@@ -96,7 +100,10 @@ function CreateARoom() {
                     </div>
 
                     <div>
-                        <label className="block mb-1 text-gray-700 font-medium">Description</label>
+                        <label className="block mb-1 text-gray-700 font-medium flex items-center gap-2">
+                            <FaUser className="text-indigo-500" />
+                            Description
+                        </label>
                         <input
                             type="text"
                             value={description}
@@ -107,7 +114,10 @@ function CreateARoom() {
                     </div>
 
                     <div>
-                        <label className="block mb-1 text-gray-700 font-medium">Room Access</label>
+                        <label className="block mb-1 text-gray-700 font-medium flex items-center gap-2">
+                            {isRoomOpen ? <FaUnlock className="text-green-500" /> : <FaLock className="text-red-500" />}
+                            Room Access
+                        </label>
                         <div className="flex items-center gap-4">
                             <span className="text-gray-800 font-semibold">
                                 {isRoomOpen ? 'Open (No Password)' : 'Closed (Password Required)'}
@@ -126,7 +136,10 @@ function CreateARoom() {
 
                     {!isRoomOpen && (
                         <div>
-                            <label className="block mb-1 text-gray-700 font-medium">Password</label>
+                            <label className="block mb-1 text-gray-700 font-medium flex items-center gap-2">
+                                <FaLock className="text-red-500" />
+                                Password
+                            </label>
                             <div className="relative">
                                 <input
                                     type="text"
@@ -147,7 +160,10 @@ function CreateARoom() {
                     )}
 
                     <div>
-                        <label className="block mb-1 text-gray-700 font-medium">Expiration Time (Optional)</label>
+                        <label className="block mb-1 text-gray-700 font-medium flex items-center gap-2">
+                            <FaClock className="text-indigo-500" />
+                            Expiration Time (Optional)
+                        </label>
                         <input
                             type="datetime-local"
                             value={expiration}
@@ -158,8 +174,9 @@ function CreateARoom() {
 
                     <button
                         type="submit"
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition"
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2"
                     >
+                        <FaPlus />
                         Create Room
                     </button>
                 </form>

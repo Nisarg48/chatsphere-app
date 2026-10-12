@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { customAlphabet } from 'nanoid';
+import { FaUser, FaDoorOpen, FaLock, FaSearch } from 'react-icons/fa';
 
 function JoinARoom() {
     const [isPasswordProtected, setIsPasswordProtected] = useState(false);
@@ -56,7 +57,10 @@ function JoinARoom() {
                     <form>
                         {/* Name Field */}
                         <fieldset className="mb-6 text-left">
-                            <legend className="text-sm px-2 text-gray-600">Name:</legend>
+                            <legend className="text-sm px-2 text-gray-600 flex items-center gap-2">
+                                <FaUser className="text-blue-500" />
+                                Name:
+                            </legend>
                             <input
                                 type="text"
                                 placeholder="Enter Your Name"
@@ -67,7 +71,10 @@ function JoinARoom() {
 
                         {/* Room Selector */}
                         <fieldset className="mb-6 text-left">
-                            <legend className="text-sm px-2 text-gray-600">Select Room:</legend>
+                            <legend className="text-sm px-2 text-gray-600 flex items-center gap-2">
+                                <FaDoorOpen className="text-blue-500" />
+                                Select Room:
+                            </legend>
                             <div className="flex gap-2 mb-2">
                                 <button
                                     type="button"
@@ -89,21 +96,25 @@ function JoinARoom() {
 
                             {/* Password Input */}
                             {isPasswordProtected && (
-                                <input
-                                    type="text"
-                                    name="password"
-                                    placeholder="Enter Room Password"
-                                    className="w-full border border-gray-400 rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                />
+                                <div className="relative">
+                                    <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        name="password"
+                                        placeholder="Enter Room Password"
+                                        className="w-full border border-gray-400 rounded-md pl-10 pr-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    />
+                                </div>
                             )}
                         </fieldset>
 
                         {/* Submit */}
                         <button
                             type="submit"
-                            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition duration-200"
+                            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition duration-200 flex items-center justify-center gap-2"
                             onClick={(e) => { joinRoom(e) }}
                         >
+                            <FaDoorOpen />
                             Join Room
                         </button>
                     </form>
@@ -131,7 +142,7 @@ function RoomList({ onSelect }) {
             } else {
                 console.error('No rooms found.');
             }
-        } 
+        }
         catch (error) {
             console.error('Error fetching rooms:', error);
         }
@@ -147,13 +158,16 @@ function RoomList({ onSelect }) {
 
     return (
         <div className="w-64 max-h-[460px] overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-md p-4 transition-all duration-300">
-            <input
-                type="text"
-                placeholder="Search Rooms"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-400 rounded-md px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
+            <div className="relative mb-4">
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                    type="text"
+                    placeholder="Search Rooms"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full border border-gray-400 rounded-md pl-10 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+            </div>
 
             {filteredRooms.length === 0 ? (
                 <p className="text-sm text-gray-500 text-center">No rooms found.</p>
@@ -163,11 +177,11 @@ function RoomList({ onSelect }) {
                         <li
                             key={index}
                             onClick={() => onSelect(roomData)}
-                            className="cursor-pointer border border-gray-300 hover:bg-gray-100 rounded px-4 py-2 text-left transition"
+                            className="cursor-pointer border border-gray-300 hover:bg-gray-100 rounded px-4 py-2 text-left transition flex items-center justify-between"
                         >
-                            {roomData.name}{' '}
+                            <span className="truncate">{roomData.name}</span>
                             {roomData.is_password_protected && (
-                                <span className="text-xs text-red-500">(Protected)</span>
+                                <FaLock className="text-red-500 text-xs ml-2 flex-shrink-0" />
                             )}
                         </li>
                     ))}
