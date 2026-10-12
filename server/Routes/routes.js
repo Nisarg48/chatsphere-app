@@ -1,5 +1,5 @@
 const { createRoom, getRoomById, getRoomByName, getAllRooms, joinRoom, leaveRoom } = require('../Controllers/Room_Controller');
-const { createMessage, getMessagesByRoomId } = require('../Controllers/Message_Controller');
+const { createMessage, getMessagesByRoomId, deleteMessage } = require('../Controllers/Message_Controller');
 
 const express = require('express');
 const router = express.Router();
@@ -15,5 +15,6 @@ router.put('/leaveRoom/:id', leaveRoom);
 // Message Routes
 router.post('/createMessage', createMessage);
 router.get('/getMessagesByRoomId/:roomId', getMessagesByRoomId);
+router.delete('/deleteMessage/:messageId', deleteMessage);
 
 module.exports = router;

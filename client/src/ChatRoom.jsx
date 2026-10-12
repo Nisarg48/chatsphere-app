@@ -3,7 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import { toast, ToastContainer } from 'react-toastify';
-import { FaSignOutAlt, FaUser, FaPaperPlane, FaLock, FaBars, FaTimes, FaKeyboard } from 'react-icons/fa';
+import { FaSignOutAlt, FaUser, FaPaperPlane, FaLock, FaBars, FaTimes, FaKeyboard, FaCopy, FaTrash } from 'react-icons/fa';
 import 'react-toastify/dist/ReactToastify.css';
 
 const socket = io('http://localhost:5000', { autoConnect: false });
@@ -76,6 +76,7 @@ function ChatRoom() {
     const [error, setError] = useState(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [typingUsers, setTypingUsers] = useState([]);
+    const [hoveredMessageId, setHoveredMessageId] = useState(null);
     const messagesEndRef = useRef(null);
     const isLeavingRef = useRef(false);
     const typingTimeoutRef = useRef(null);
@@ -119,6 +120,10 @@ function ChatRoom() {
             setTypingUsers(users.filter(user => user !== currentUser));
         });
 
+        socket.on('message-deleted', (messageId) => {
+            setMessages(prevMessages => prevMessages.filter(msg => msg._id !== messageId));
+        });
+
         const handleNavigation = () => {
             if (!isLeavingRef.current && window.confirm('Are you sure you want to leave the room?')) {
                 isLeavingRef.current = true;
@@ -151,6 +156,7 @@ function ChatRoom() {
                 socket.off('error');
                 socket.off('connect_error');
                 socket.off('typing-status');
+                socket.off('message-deleted');
                 socket.disconnect();
             }
         };
@@ -209,6 +215,31 @@ function ChatRoom() {
         const minutes = String(d.getMinutes()).padStart(2, '0');
         return `${day}/${month}/${year} - ${hours}:${minutes}`;
     }
+
+    function getRelativeTime(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        return `${diffDays}d ago`;
+    }
+
+    const handleCopyMessage = (message) => {
+        navigator.clipboard.writeText(message);
+        toast.success('Message copied to clipboard');
+    };
+
+    const handleDeleteMessage = async (messageId) => {
+        if (window.confirm('Are you sure you want to delete this message?')) {
+            socket.emit('delete-message', { messageId, roomId: id, user: currentUser });
+        }
+    };
 
     const sendMessage = () => {
         if (!newMessage.trim()) return;
@@ -386,24 +417,55 @@ function ChatRoom() {
                                 {group.messages.map((msg, msgIndex) => (
                                     <div
                                         key={msg._id}
-                                        className={`px-4 py-2 rounded-lg shadow-sm whitespace-pre-wrap transition-all duration-200 ${
-                                            group.isCurrentUser
-                                                ? msgIndex === group.messages.length - 1
-                                                    ? 'bg-indigo-600 dark:bg-indigo-500 text-white rounded-br-none'
-                                                    : 'bg-indigo-500 dark:bg-indigo-600 text-white rounded-lg'
-                                                : msgIndex === group.messages.length - 1
-                                                    ? 'bg-white dark:bg-gray-700 text-indigo-900 dark:text-gray-100 rounded-bl-none border border-indigo-300 dark:border-gray-600'
-                                                    : 'bg-white dark:bg-gray-700 text-indigo-900 dark:text-gray-100 rounded-lg border border-indigo-200 dark:border-gray-600'
-                                        }`}
+                                        className="relative group"
+                                        onMouseEnter={() => setHoveredMessageId(msg._id)}
+                                        onMouseLeave={() => setHoveredMessageId(null)}
                                     >
-                                        <p className="text-sm">{msg.message}</p>
+                                        <div
+                                            className={`px-4 py-2 rounded-lg shadow-sm whitespace-pre-wrap transition-all duration-200 ${
+                                                group.isCurrentUser
+                                                    ? msgIndex === group.messages.length - 1
+                                                        ? 'bg-indigo-600 dark:bg-indigo-500 text-white rounded-br-none'
+                                                        : 'bg-indigo-500 dark:bg-indigo-600 text-white rounded-lg'
+                                                    : msgIndex === group.messages.length - 1
+                                                        ? 'bg-white dark:bg-gray-700 text-indigo-900 dark:text-gray-100 rounded-bl-none border border-indigo-300 dark:border-gray-600'
+                                                        : 'bg-white dark:bg-gray-700 text-indigo-900 dark:text-gray-100 rounded-lg border border-indigo-200 dark:border-gray-600'
+                                            }`}
+                                        >
+                                            <p className="text-sm">{msg.message}</p>
+                                        </div>
+                                        
+                                        {/* Message Actions */}
+                                        {hoveredMessageId === msg._id && (
+                                            <div className={`absolute top-0 ${group.isCurrentUser ? '-left-24' : '-right-24'} flex gap-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-1 border border-gray-200 dark:border-gray-700`}>
+                                                <button
+                                                    onClick={() => handleCopyMessage(msg.message)}
+                                                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-300 transition"
+                                                    title="Copy message"
+                                                >
+                                                    <FaCopy className="text-xs" />
+                                                </button>
+                                                {group.isCurrentUser && (
+                                                    <button
+                                                        onClick={() => handleDeleteMessage(msg._id)}
+                                                        className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-500 transition"
+                                                        title="Delete message"
+                                                    >
+                                                        <FaTrash className="text-xs" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
                             
                             {/* Timestamp for last message in group */}
-                            <span className="text-xs text-indigo-500 dark:text-indigo-400 mt-1">
-                                {group.messages[group.messages.length - 1].sent_at}
+                            <span 
+                                className="text-xs text-indigo-500 dark:text-indigo-400 mt-1 cursor-help"
+                                title={group.messages[group.messages.length - 1].sent_at}
+                            >
+                                {getRelativeTime(group.messages[group.messages.length - 1].sent_at)}
                             </span>
                         </div>
                     ))}
