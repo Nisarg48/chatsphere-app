@@ -1,11 +1,14 @@
 import { BrowserRouter } from 'react-router-dom';
 import AppRoute from './AppRoute';
+import { DarkModeProvider } from './contexts/DarkModeContext';
 
 function App() {
   return (
-    <BrowserRouter>
-      <AppRoute />
-    </BrowserRouter>
+    <DarkModeProvider>
+      <BrowserRouter>
+        <AppRoute />
+      </BrowserRouter>
+    </DarkModeProvider>
   )
 }
 

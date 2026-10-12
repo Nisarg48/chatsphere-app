@@ -265,29 +265,29 @@ function ChatRoom() {
     }
 
     return (
-        <div className="flex flex-col md:flex-row h-screen bg-indigo-50 relative">
+        <div className="flex flex-col md:flex-row h-screen bg-indigo-50 dark:bg-gray-900 relative">
             {/* Mobile Sidebar Toggle */}
             <button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="md:hidden absolute top-4 left-4 z-50 bg-indigo-600 text-white p-2 rounded-lg shadow-lg"
+                className="md:hidden absolute top-4 left-4 z-50 bg-indigo-600 dark:bg-indigo-500 text-white p-2 rounded-lg shadow-lg"
             >
                 {isSidebarOpen ? <FaTimes /> : <FaBars />}
             </button>
 
             {/* Sidebar */}
-            <div className={`fixed md:relative inset-y-0 left-0 z-40 w-80 bg-white border-r border-indigo-200 flex-shrink-0 flex flex-col transition-all duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-                <div className="p-4 md:p-6 border-b border-indigo-200">
-                    <h2 className="text-xl md:text-2xl font-semibold text-indigo-800">{roomData.name}</h2>
-                    <p className="text-sm text-indigo-600 mt-1">{roomData.description}</p>
+            <div className={`fixed md:relative inset-y-0 left-0 z-40 w-80 bg-white dark:bg-gray-800 border-r border-indigo-200 dark:border-gray-700 flex-shrink-0 flex flex-col transition-all duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+                <div className="p-4 md:p-6 border-b border-indigo-200 dark:border-gray-700">
+                    <h2 className="text-xl md:text-2xl font-semibold text-indigo-800 dark:text-indigo-300">{roomData.name}</h2>
+                    <p className="text-sm text-indigo-600 dark:text-indigo-400 mt-1">{roomData.description}</p>
                     {roomData.is_password_protected && (
-                        <p className="mt-2 text-sm text-red-600 font-mono flex items-center gap-2">
+                        <p className="mt-2 text-sm text-red-600 dark:text-red-400 font-mono flex items-center gap-2">
                             <FaLock />
                             Password: <span className="font-semibold">{roomData.password}</span>
                         </p>
                     )}
                 </div>
                 <div className="flex-grow overflow-y-auto">
-                    <h3 className="px-4 py-2 border-b border-indigo-200 text-indigo-700 font-semibold text-sm flex items-center gap-2">
+                    <h3 className="px-4 py-2 border-b border-indigo-200 dark:border-gray-700 text-indigo-700 dark:text-indigo-300 font-semibold text-sm flex items-center gap-2">
                         <FaUser />
                         Users in this room ({userList.length})
                     </h3>
@@ -295,24 +295,24 @@ function ChatRoom() {
                         {userList.map((user) => (
                             <li
                                 key={user}
-                                className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 ${user === currentUser ? 'bg-indigo-100' : 'hover:bg-gray-50'}`}
+                                className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 ${user === currentUser ? 'bg-indigo-100 dark:bg-indigo-900/30' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                             >
                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 ${getAvatarColor(user)}`}>
                                     {getInitials(user)}
                                 </div>
                                 <div className="flex-grow min-w-0">
-                                    <p className={`text-sm truncate ${user === currentUser ? 'font-semibold text-indigo-900' : 'text-indigo-800'}`}>
+                                    <p className={`text-sm truncate ${user === currentUser ? 'font-semibold text-indigo-900 dark:text-indigo-200' : 'text-indigo-800 dark:text-gray-300'}`}>
                                         {user}
                                     </p>
                                     {user === currentUser && (
-                                        <p className="text-xs text-indigo-500">You</p>
+                                        <p className="text-xs text-indigo-500 dark:text-indigo-400">You</p>
                                     )}
                                 </div>
                             </li>
                         ))}
                     </ul>
                 </div>
-                <div className="p-4 border-t border-indigo-200">
+                <div className="p-4 border-t border-indigo-200 dark:border-gray-700">
                     <button
                         onClick={() => {
                             setIsLeaving(true);
@@ -338,7 +338,7 @@ function ChatRoom() {
 
             {/* Chat Area */}
             <div className="flex flex-col flex-grow md:ml-0">
-                <div className="flex-grow overflow-y-auto p-4 md:p-6 space-y-4 bg-indigo-100">
+                <div className="flex-grow overflow-y-auto p-4 md:p-6 space-y-4 bg-indigo-100 dark:bg-gray-800">
                     {groupMessages(messages, currentUser).map((group, groupIndex) => (
                         <div
                             key={groupIndex}
@@ -349,7 +349,7 @@ function ChatRoom() {
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 ${getAvatarColor(group.sender)}`}>
                                     {getInitials(group.sender)}
                                 </div>
-                                <p className={`text-sm font-semibold ${group.isCurrentUser ? 'text-indigo-700' : 'text-indigo-900'}`}>
+                                <p className={`text-sm font-semibold ${group.isCurrentUser ? 'text-indigo-700 dark:text-indigo-300' : 'text-indigo-900 dark:text-gray-200'}`}>
                                     {group.sender}
                                 </p>
                             </div>
@@ -362,11 +362,11 @@ function ChatRoom() {
                                         className={`px-4 py-2 rounded-lg shadow-sm whitespace-pre-wrap transition-all duration-200 ${
                                             group.isCurrentUser
                                                 ? msgIndex === group.messages.length - 1
-                                                    ? 'bg-indigo-600 text-white rounded-br-none'
-                                                    : 'bg-indigo-500 text-white rounded-lg'
+                                                    ? 'bg-indigo-600 dark:bg-indigo-500 text-white rounded-br-none'
+                                                    : 'bg-indigo-500 dark:bg-indigo-600 text-white rounded-lg'
                                                 : msgIndex === group.messages.length - 1
-                                                    ? 'bg-white text-indigo-900 rounded-bl-none border border-indigo-300'
-                                                    : 'bg-white text-indigo-900 rounded-lg border border-indigo-200'
+                                                    ? 'bg-white dark:bg-gray-700 text-indigo-900 dark:text-gray-100 rounded-bl-none border border-indigo-300 dark:border-gray-600'
+                                                    : 'bg-white dark:bg-gray-700 text-indigo-900 dark:text-gray-100 rounded-lg border border-indigo-200 dark:border-gray-600'
                                         }`}
                                     >
                                         <p className="text-sm">{msg.message}</p>
@@ -375,25 +375,25 @@ function ChatRoom() {
                             </div>
                             
                             {/* Timestamp for last message in group */}
-                            <span className="text-xs text-indigo-500 mt-1">
+                            <span className="text-xs text-indigo-500 dark:text-indigo-400 mt-1">
                                 {group.messages[group.messages.length - 1].sent_at}
                             </span>
                         </div>
                     ))}
                     <div ref={messagesEndRef} />
                 </div>
-                <div className="border-t border-indigo-200 p-3 sm:p-4 bg-white flex items-center gap-2 sm:gap-4">
+                <div className="border-t border-indigo-200 dark:border-gray-700 p-3 sm:p-4 bg-white dark:bg-gray-800 flex items-center gap-2 sm:gap-4">
                     <textarea
                         rows={1}
                         placeholder="Type your message..."
-                        className="flex-grow resize-none border border-indigo-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 text-indigo-900"
+                        className="flex-grow resize-none border border-indigo-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 bg-white dark:bg-gray-700 text-indigo-900 dark:text-gray-100"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyDown={handleKeyDown}
                     />
                     <button
                         onClick={sendMessage}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-md px-4 sm:px-5 py-2 text-sm font-semibold transition flex items-center gap-2"
+                        className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-md px-4 sm:px-5 py-2 text-sm font-semibold transition flex items-center gap-2"
                     >
                         <FaPaperPlane />
                         Send
