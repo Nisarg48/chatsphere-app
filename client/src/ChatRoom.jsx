@@ -77,6 +77,7 @@ function ChatRoom() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [typingUsers, setTypingUsers] = useState([]);
     const [hoveredMessageId, setHoveredMessageId] = useState(null);
+    const [systemMessages, setSystemMessages] = useState([]);
     const messagesEndRef = useRef(null);
     const isLeavingRef = useRef(false);
     const typingTimeoutRef = useRef(null);
@@ -124,6 +125,16 @@ function ChatRoom() {
             setMessages(prevMessages => prevMessages.filter(msg => msg._id !== messageId));
         });
 
+        socket.on('user-joined', ({ user, timestamp }) => {
+            const time = formatDate(timestamp);
+            setSystemMessages(prev => [...prev, { type: 'join', user, time }]);
+        });
+
+        socket.on('user-left', ({ user, timestamp }) => {
+            const time = formatDate(timestamp);
+            setSystemMessages(prev => [...prev, { type: 'leave', user, time }]);
+        });
+
         const handleNavigation = () => {
             if (!isLeavingRef.current && window.confirm('Are you sure you want to leave the room?')) {
                 isLeavingRef.current = true;
@@ -157,6 +168,8 @@ function ChatRoom() {
                 socket.off('connect_error');
                 socket.off('typing-status');
                 socket.off('message-deleted');
+                socket.off('user-joined');
+                socket.off('user-left');
                 socket.disconnect();
             }
         };
@@ -397,6 +410,18 @@ function ChatRoom() {
             {/* Chat Area */}
             <div className="flex flex-col flex-grow md:ml-0">
                 <div className="flex-grow overflow-y-auto p-4 md:p-6 space-y-4 bg-indigo-100 dark:bg-gray-800">
+                    {/* System Messages */}
+                    {systemMessages.map((sysMsg, index) => (
+                        <div
+                            key={`sys-${index}`}
+                            className="flex justify-center items-center gap-2 text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-200/50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-full"
+                        >
+                            <span>{sysMsg.user}</span>
+                            <span>{sysMsg.type === 'join' ? 'joined' : 'left'} the room</span>
+                            <span className="text-indigo-500 dark:text-indigo-500/70">• {sysMsg.time}</span>
+                        </div>
+                    ))}
+                    
                     {groupMessages(messages, currentUser).map((group, groupIndex) => (
                         <div
                             key={groupIndex}

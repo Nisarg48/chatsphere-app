@@ -47,7 +47,8 @@ io.on('connection', (socket) => {
             if (!roomUsers[id]) {
                 roomUsers[id] = new Set();
             }
-            if (!roomUsers[id].has(user)) {
+            const isNewUser = !roomUsers[id].has(user);
+            if (isNewUser) {
                 roomUsers[id].add(user);
                 await Room.findOneAndUpdate(
                     { _id: id },
@@ -58,6 +59,11 @@ io.on('connection', (socket) => {
 
             io.to(id).emit('update-user-list', Array.from(roomUsers[id]));
             socket.data = { roomId: id, userName: user };
+            
+            // Emit join notification if user was not already in room
+            if (isNewUser) {
+                io.to(id).emit('user-joined', { user, timestamp: new Date().toISOString() });
+            }
         } catch (err) {
             console.error('Error in join-room:', err);
             socket.emit('error', { message: 'Failed to join room.' });
@@ -127,6 +133,7 @@ io.on('connection', (socket) => {
                     { new: true }
                 );
                 io.to(id).emit('update-user-list', Array.from(roomUsers[id]));
+                io.to(id).emit('user-left', { user, timestamp: new Date().toISOString() });
                 console.log(`User ${user} left room ${id}`);
             } else {
                 console.warn(`Invalid leave-room attempt: id=${id}, user=${user}`);
