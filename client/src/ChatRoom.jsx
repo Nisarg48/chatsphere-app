@@ -3,7 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import { toast, ToastContainer } from 'react-toastify';
-import { FaSignOutAlt, FaUser, FaPaperPlane, FaLock, FaBars, FaTimes, FaKeyboard, FaCopy, FaTrash } from 'react-icons/fa';
+import { FaSignOutAlt, FaUser, FaPaperPlane, FaLock, FaBars, FaTimes, FaKeyboard, FaCopy, FaTrash, FaSearch, FaTimesCircle } from 'react-icons/fa';
 import 'react-toastify/dist/ReactToastify.css';
 
 const socket = io('http://localhost:5000', { autoConnect: false });
@@ -78,6 +78,9 @@ function ChatRoom() {
     const [typingUsers, setTypingUsers] = useState([]);
     const [hoveredMessageId, setHoveredMessageId] = useState(null);
     const [systemMessages, setSystemMessages] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
     const messagesEndRef = useRef(null);
     const isLeavingRef = useRef(false);
     const typingTimeoutRef = useRef(null);
@@ -254,6 +257,54 @@ function ChatRoom() {
         }
     };
 
+    const handleSearch = (e) => {
+        const term = e.target.value;
+        setSearchTerm(term);
+        
+        if (term.trim()) {
+            const results = messages.filter(msg => 
+                msg.message.toLowerCase().includes(term.toLowerCase()) ||
+                msg.sender.toLowerCase().includes(term.toLowerCase())
+            );
+            setSearchResults(results);
+            setCurrentSearchIndex(0);
+        } else {
+            setSearchResults([]);
+            setCurrentSearchIndex(0);
+        }
+    };
+
+    const clearSearch = () => {
+        setSearchTerm('');
+        setSearchResults([]);
+        setCurrentSearchIndex(0);
+    };
+
+    const scrollToSearchResult = (index) => {
+        if (searchResults[index]) {
+            const messageId = searchResults[index]._id;
+            const element = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                element.classList.add('ring-2', 'ring-yellow-400');
+                setTimeout(() => {
+                    element.classList.remove('ring-2', 'ring-yellow-400');
+                }, 2000);
+            }
+        }
+    };
+
+    const navigateSearch = (direction) => {
+        if (searchResults.length === 0) return;
+        
+        let newIndex = currentSearchIndex + direction;
+        if (newIndex < 0) newIndex = searchResults.length - 1;
+        if (newIndex >= searchResults.length) newIndex = 0;
+        
+        setCurrentSearchIndex(newIndex);
+        scrollToSearchResult(newIndex);
+    };
+
     const sendMessage = () => {
         if (!newMessage.trim()) return;
         const time = formatDate(Date.now());
@@ -291,6 +342,19 @@ function ChatRoom() {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendMessage();
+        }
+        
+        // Search navigation shortcuts
+        if (searchResults.length > 0) {
+            if (e.key === 'ArrowUp' && e.ctrlKey) {
+                e.preventDefault();
+                navigateSearch(-1);
+            } else if (e.key === 'ArrowDown' && e.ctrlKey) {
+                e.preventDefault();
+                navigateSearch(1);
+            } else if (e.key === 'Escape') {
+                clearSearch();
+            }
         }
     };
 
@@ -409,6 +473,49 @@ function ChatRoom() {
 
             {/* Chat Area */}
             <div className="flex flex-col flex-grow md:ml-0">
+                {/* Search Bar */}
+                <div className="border-b border-indigo-200 dark:border-gray-700 p-3 bg-white dark:bg-gray-800">
+                    <div className="flex items-center gap-2">
+                        <div className="relative flex-grow">
+                            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Search messages..."
+                                value={searchTerm}
+                                onChange={handleSearch}
+                                className="w-full border border-gray-300 dark:border-gray-600 rounded-md pl-10 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            />
+                            {searchTerm && (
+                                <button
+                                    onClick={clearSearch}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                >
+                                    <FaTimesCircle />
+                                </button>
+                            )}
+                        </div>
+                        {searchResults.length > 0 && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                <span>{currentSearchIndex + 1}/{searchResults.length}</span>
+                                <button
+                                    onClick={() => navigateSearch(-1)}
+                                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                                    title="Previous result"
+                                >
+                                    ↑
+                                </button>
+                                <button
+                                    onClick={() => navigateSearch(1)}
+                                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                                    title="Next result"
+                                >
+                                    ↓
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 <div className="flex-grow overflow-y-auto p-4 md:p-6 space-y-4 bg-indigo-100 dark:bg-gray-800">
                     {/* System Messages */}
                     {systemMessages.map((sysMsg, index) => (
@@ -442,6 +549,7 @@ function ChatRoom() {
                                 {group.messages.map((msg, msgIndex) => (
                                     <div
                                         key={msg._id}
+                                        data-message-id={msg._id}
                                         className="relative group"
                                         onMouseEnter={() => setHoveredMessageId(msg._id)}
                                         onMouseLeave={() => setHoveredMessageId(null)}
