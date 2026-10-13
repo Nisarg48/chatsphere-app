@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { customAlphabet } from 'nanoid';
 import { FaUser, FaDoorOpen, FaLock, FaSearch, FaUsers, FaClock, FaFilter, FaSortAmountDown } from 'react-icons/fa';
+import { getUserIdentity } from '../utils/identity';
 
 function JoinARoom() {
     const [isPasswordProtected, setIsPasswordProtected] = useState(false);
@@ -31,33 +31,28 @@ function JoinARoom() {
                 return;
             }
 
-            // For protected rooms, we should validate password (this would need backend support)
-            // For now, we'll proceed with the join
-
-            const generateID = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 6);
-            const userId = generateID();
-            const UserName = `${userName}_( ${userId} )`;
-            console.log('Generated username:', UserName);
-
+            // Use persistent identity instead of generating new random ID each time
+            const userIdentity = getUserIdentity(userName);
+            console.log('Using persistent identity:', userIdentity);
 
             const response = await axios.put(`http://localhost:5000/chat-sphere/joinRoom/${roomName}`, 
                 {
-                    user: UserName,
+                    user: userIdentity,
                 }
             );
 
             if (response.status === 200) {
-                console.log('Joined roomData successfully:', response.data);
+                console.log('Joined room successfully:', response.data);
 
-                // Redirect to the chat roomData with roomData details
-                navigate(`/chat/${response.data._id}`, { state: { user: UserName } });
+                // Redirect to the chat room with room details
+                navigate(`/chat/${response.data._id}`, { state: { user: userIdentity } });
 
             } else {
-                console.error('Failed to join roomData:', response.data);
+                console.error('Failed to join room:', response.data);
             }
         }
         catch (error) {
-            console.error('Error joining roomData:', error);
+            console.error('Error joining room:', error);
             alert('Failed to join room. Please try again.');
         }
     }
