@@ -44,9 +44,17 @@ io.on('connection', (socket) => {
             socket.join(id);
             console.log(`User ${user} (${socket.id}) joined room ${id}`);
 
+            // Initialize roomUsers if not exists
             if (!roomUsers[id]) {
                 roomUsers[id] = new Set();
+                // Populate from database users array on first join (for server restart scenario)
+                if (room.users && room.users.length > 0) {
+                    room.users.forEach(dbUser => {
+                        roomUsers[id].add(dbUser);
+                    });
+                }
             }
+
             const isNewUser = !roomUsers[id].has(user);
             if (isNewUser) {
                 roomUsers[id].add(user);
