@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { io } from 'socket.io-client';
@@ -628,6 +628,7 @@ function ChatRoom() {
                         value={newMessage}
                         onChange={handleTyping}
                         onKeyDown={handleKeyDown}
+                        aria-label="Message input"
                     />
                     <button
                         onClick={sendMessage}
