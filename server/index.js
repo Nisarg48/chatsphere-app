@@ -68,9 +68,10 @@ io.on('connection', (socket) => {
             io.to(id).emit('update-user-list', Array.from(roomUsers[id]));
             socket.data = { roomId: id, userName: user };
             
-            // Emit join notification if user was not already in room
+            // Emit join notification to other users (not the joining user themselves)
+            // This prevents the user who just joined from seeing their own join notification
             if (isNewUser) {
-                io.to(id).emit('user-joined', { user, timestamp: new Date().toISOString() });
+                socket.to(id).emit('user-joined', { user, timestamp: new Date().toISOString() });
             }
         } catch (err) {
             console.error('Error in join-room:', err);
@@ -141,7 +142,8 @@ io.on('connection', (socket) => {
                     { new: true }
                 );
                 io.to(id).emit('update-user-list', Array.from(roomUsers[id]));
-                io.to(id).emit('user-left', { user, timestamp: new Date().toISOString() });
+                // Emit leave notification to other users (not the leaving user themselves)
+                socket.to(id).emit('user-left', { user, timestamp: new Date().toISOString() });
                 console.log(`User ${user} left room ${id}`);
             } else {
                 console.warn(`Invalid leave-room attempt: id=${id}, user=${user}`);
@@ -163,6 +165,8 @@ io.on('connection', (socket) => {
                     { new: true }
                 );
                 io.to(roomId).emit('update-user-list', Array.from(roomUsers[roomId]));
+                // Don't emit user-left on disconnect to avoid confusion
+                // The user might just be refreshing the page
                 console.log(`User ${userName} disconnected from room ${roomId}`);
             }
         } catch (err) {
