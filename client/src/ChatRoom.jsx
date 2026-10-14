@@ -223,7 +223,16 @@ function ChatRoom() {
     }, [messages]);
 
     function formatDate(date) {
+        if (!date) return 'Unknown time';
+        
         const d = new Date(date);
+        
+        // Check if date is invalid
+        if (isNaN(d.getTime())) {
+            console.error('Invalid date:', date);
+            return 'Unknown time';
+        }
+        
         const day = String(d.getDate()).padStart(2, '0');
         const month = String(d.getMonth() + 1).padStart(2, '0');
         const year = d.getFullYear();
@@ -550,7 +559,7 @@ function ChatRoom() {
                                     <div
                                         key={msg._id}
                                         data-message-id={msg._id}
-                                        className="relative group"
+                                        className="relative group flex flex-col"
                                         onMouseEnter={() => setHoveredMessageId(msg._id)}
                                         onMouseLeave={() => setHoveredMessageId(null)}
                                     >
@@ -570,7 +579,7 @@ function ChatRoom() {
                                         
                                         {/* Message Actions */}
                                         {hoveredMessageId === msg._id && (
-                                            <div className={`absolute top-0 ${group.isCurrentUser ? '-left-24' : '-right-24'} flex gap-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-1 border border-gray-200 dark:border-gray-700`}>
+                                            <div className={`absolute top-0 ${group.isCurrentUser ? '-left-24' : '-right-24'} flex gap-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-1 border border-gray-200 dark:border-gray-700 z-10`}>
                                                 <button
                                                     onClick={() => handleCopyMessage(msg.message)}
                                                     className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-300 transition"
